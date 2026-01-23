@@ -1,0 +1,15 @@
+
+# Arquivos temporários
+__pycache__/
+*.pyc
+
+# Virtualenv
+venv/
+.env/
+
+# Planilhas que mudam sempre
+Promotorias.xlsx
+Host_nagiosmpls.xlsx
+
+# Logs
+*.log

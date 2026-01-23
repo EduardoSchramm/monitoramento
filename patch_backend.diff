@@ -1,0 +1,150 @@
+
+@@
+-from flask import Flask, jsonify, send_from_directory
++from flask import Flask, jsonify, send_from_directory
+@@
+-# CONSULTA AO NAGIOS
+-# ============================================================
+-def map_status(code: int) -> str:
+-    """
+-    Mapeamento solicitado:
+-    2 -> UP
+-    4 -> DOWN
+-    0 -> UNKNOW
+-    demais -> WARNING
+-    """
+-    if code == 2:
+-        return "UP"
+-    if code == 4:
+-        return "DOWN"
+-    if code == 0:
+-        return "UNKNOW"
+-    return "WARNING"
+-
+-def estado_nagios(host: str) -> str:
+-    """
+-    Consulta o Nagios corretamente no caminho:
+-    data["data"]["host"]["status"]
+-    E aplica o mapeamento acima.
+-    """
+-    try:
+-        url = f"{NAGIOS_URL}?query=host&hostname={host}"
+-        r = session.get(url, auth=(NAGIOS_USER, NAGIOS_PASS), timeout=8)
+-        r.raise_for_status()
+-        data = r.json()
+-        # CAMINHO CORRETO NA RESPOSTA DO NAGIOS
+-        hostdata = data.get("data", {}).get("host")
+-        if not hostdata:
+-            return "UNKNOWN"
+-        raw = hostdata.get("status")
+-        if raw is None:
+-            return "UNKNOWN"
+-        code = int(raw)
+-        return map_status(code)
+-    except Exception as e:
+-        # Se qualquer erro ocorrer, retorne UNKNOWN
+-        return "UNKNOWN"
++# CONSULTA AO NAGIOS (consolidada)
++# ============================================================
++def map_status(code: int) -> str:
++    """
++    2 -> UP
++    4 -> DOWN
++    0 -> UNKNOWN
++    demais -> WARNING
++    """
++    if code == 2:
++        return "UP"
++    if code == 4:
++        return "DOWN"
++    if code == 0:
++        return "UNKNOWN"
++    return "WARNING"
++
++def get_host_info(host: str) -> dict:
++    """
++    Consulta única ao Nagios para obter:
++      - status_nagios (mapeado)
++      - is_flapping (bool)
++      - last_time_down (ms epoch)
++      - last_time_up (ms epoch)
++      - last_downtime_duration_ms (ms)
++      - plugin_output (str)
++    """
++    try:
++        url = f"{NAGIOS_URL}?query=host&hostname={host}"
++        r = session.get(url, auth=(NAGIOS_USER, NAGIOS_PASS), timeout=8)
++        r.raise_for_status()
++        data = r.json()
++        hostdata = data.get("data", {}).get("host", {}) or {}
++
++        raw_status = hostdata.get("status")
++        status_nagios = "UNKNOWN"
++        if raw_status is not None:
++            status_nagios = map_status(int(raw_status))
++
++        is_flapping = bool(hostdata.get("is_flapping", False))
++        last_time_down = int(hostdata.get("last_time_down", 0) or 0)
++        last_time_up = int(hostdata.get("last_time_up", 0) or 0)
++        plugin_output = hostdata.get("plugin_output", "") or ""
++
++        duration_ms = last_time_up - last_time_down
++        if duration_ms < 0:
++            duration_ms = 0
++
++        return {
++            "status_nagios": status_nagios,
++            "is_flapping": is_flapping,
++            "last_time_down": last_time_down,
++            "last_time_up": last_time_up,
++            "last_downtime_duration_ms": duration_ms,
++            "plugin_output": plugin_output,
++        }
++    except Exception:
++        return {
++            "status_nagios": "UNKNOWN",
++            "is_flapping": False,
++            "last_time_down": 0,
++            "last_time_up": 0,
++            "last_downtime_duration_ms": 0,
++            "plugin_output": "",
++        }
+@@
+-@app.route('/api/status')
+-def api_status():
++@app.route('/api/status')
++def api_status():
+     now = time.time()
+     # Cache de 10 segundos
+     if _cache['data'] is not None and (now - _cache['ts'] < CACHE_SECONDS):
+         return jsonify(_cache['data'])
+     lista = reload_if_needed()
+     out = []
+     for p in lista:
+-        st = estado_nagios(p['host'])
+-        out.append({
+-            'nome': p['nome'],
+-            'lat': p['lat'],
+-            'lng': p['lng'],
+-            'host': p['host'],
+-            'status_local': p['status_local'],
+-            'status_nagios': st
+-        })
++        info = get_host_info(p['host'])
++        out.append({
++            'nome': p['nome'],
++            'lat': p['lat'],
++            'lng': p['lng'],
++            'host': p['host'],
++            'status_local': p['status_local'],
++            'status_nagios': info['status_nagios'],
++            'is_flapping': info['is_flapping'],
++            'last_time_down': info['last_time_down'],
++            'last_time_up': info['last_time_up'],
++            'last_downtime_duration_ms': info['last_downtime_duration_ms'],
++            'plugin_output': info['plugin_output'],
++        })
+     _cache['data'] = out
+     _cache['ts'] = now
+     return jsonify(out)
+``
