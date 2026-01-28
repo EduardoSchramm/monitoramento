@@ -1,0 +1,40 @@
+
+/* Base do cluster (divIcon) */
+.cluster-base {
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); /* halo de destaque */
+  background: linear-gradient(145deg, #ffffff, #e9eef6);
+  color: #1b263b;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  user-select: none;
+}
+.cluster-base .cluster-inner {
+  padding-top: 1px; /* centraliza melhor o texto */
+  font-size: 12px;
+}
+
+/* Todos OK: azul discreto */
+.cluster-ok {
+  background: radial-gradient(circle at 30% 30%, #e6f2ff 0%, #cfe7ff 70%, #b7dafc 100%);
+  border-color: rgba(0, 102, 204, 0.35);
+  color: #084b8a;
+}
+
+/* Há pelo menos um DOWN: tom levemente avermelhado */
+.cluster-warn {
+  background: radial-gradient(circle at 30% 30%, #ffecec 0%, #ffd9d9 70%, #ffcaca 100%);
+  border-color: rgba(217, 83, 79, 0.35);
+  color: #8a1f1f;
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.18); /* halo vermelho suave */
+}
+
+/* Acessibilidade: foco via teclado no cluster (divIcon) */
+.leaflet-marker-icon.cluster-base:focus {
+  outline: 3px solid #222;
+  outline-offset: 2px;
+}

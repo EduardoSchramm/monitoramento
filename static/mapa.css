@@ -1,40 +1,319 @@
 
-/* Base do cluster (divIcon) */
-.cluster-base {
+/* ============================================================
+   mapa.css — estilo do mapa e dos clusters (Leaflet + Cluster)
+   Compatível com mapa.js final (classes: cluster-up, -warning, -unknown, -down)
+   ============================================================ */
+
+/* Paleta base (consistente com o back/JS) */
+:root {
+  --up:      #22c55e;   /* verde   */
+  --down:    #ef4444;   /* vermelho*/
+  --warning: #f59e0b;   /* amarelo */
+  --unknown: #6b7280;   /* cinza   */
+  --clusterText: #111;  /* texto */
+}
+
+/* Layout geral (index.html já define o header; aqui reforçamos o mapa) */
+html, body { height: 100%; margin: 0; }
+#map { height: calc(100vh - 54px); }
+
+/* ------------------------------------------------------------
+   CLUSTERS (Leaflet.markercluster)
+   A estrutura padrão do plugin é .marker-cluster > div > span
+   O JS (iconCreateFunction) já define o tamanho: 40x40
+   ------------------------------------------------------------ */
+
+/* Base do “alfinete de cluster” (divIcon) */
+.marker-cluster {
+  background: transparent !important;   /* deixamos a cor para o .marker-cluster div */
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.18);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); /* halo de destaque */
-  background: linear-gradient(145deg, #ffffff, #e9eef6);
-  color: #1b263b;
-  display: grid;
-  place-items: center;
-  font-weight: 600;
-  line-height: 1;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+/* Bolha interna do cluster: circulo, centralização e tipografia */
+.marker-cluster div {
+  width: 40px;           /* mesmo tamanho definido no JS */
+  height: 40px;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: var(--clusterText);
+  font-weight: 700;
+  border: 2px solid rgba(0,0,0,.18);
+  box-shadow: 0 1px 3px rgba(0,0,0,.18);
   user-select: none;
-}
-.cluster-base .cluster-inner {
-  padding-top: 1px; /* centraliza melhor o texto */
-  font-size: 12px;
+  transition: transform .08s ease-out, background-color .15s ease, box-shadow .15s ease;
 }
 
-/* Todos OK: azul discreto */
-.cluster-ok {
-  background: radial-gradient(circle at 30% 30%, #e6f2ff 0%, #cfe7ff 70%, #b7dafc 100%);
-  border-color: rgba(0, 102, 204, 0.35);
-  color: #084b8a;
+/* Animação sutil no hover/foco para melhor UX */
+.marker-cluster:hover div,
+.marker-cluster:focus div {
+  transform: scale(1.06);
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  outline: none;
 }
 
-/* Há pelo menos um DOWN: tom levemente avermelhado */
-.cluster-warn {
-  background: radial-gradient(circle at 30% 30%, #ffecec 0%, #ffd9d9 70%, #ffcaca 100%);
-  border-color: rgba(217, 83, 79, 0.35);
-  color: #8a1f1f;
-  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.18); /* halo vermelho suave */
+/* Garantir centralização do número */
+.marker-cluster span {
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(1px); /* micro-ajuste visual */
 }
 
-/* Acessibilidade: foco via teclado no cluster (divIcon) */
-.leaflet-marker-icon.cluster-base:focus {
+/* ------------------------------------------------------------
+   CORES POR STATUS (aplicadas ao container do cluster)
+   O JS aplica className: "marker-cluster cluster-<estado>"
+   ------------------------------------------------------------ */
+
+/* UP - predominância de disponibilidade */
+.marker-cluster.cluster-up div {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+/* WARNING - atenção (amarelo) */
+.marker-cluster.cluster-warning div {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+/* UNKNOWN - estado indeterminado (cinza) */
+.marker-cluster.cluster-unknown div {
+  background: rgba(107, 114, 128, 0.25);
+  border-color: rgba(107, 114, 128, 0.45);
+}
+
+/* DOWN - prioridade máxima (vermelho) */
+.marker-cluster.cluster-down div {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* ------------------------------------------------------------
+   POPUP (opcional, cosmético)
+   ------------------------------------------------------------ */
+
+.leaflet-popup-content {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.leaflet-popup-content strong { font-size: 14px; }
+.leaflet-popup-content small  { color: #444; }
+
+/* ------------------------------------------------------------
+   ACESSIBILIDADE: foco de teclado nos ícones de cluster
+   ------------------------------------------------------------ */
+
+.leaflet-marker-icon.marker-cluster:focus {
   outline: 3px solid #222;
   outline-offset: 2px;
+}
+
+/* Badge "Flapping" no popup */
+.badge-flapping {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;                  /* mesmo --clusterText */
+  background: rgba(245, 158, 11, 0.18); /* amarelo suave */
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 10px;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* Botão flutuante de áudio (Som ON/OFF) */
+.audio-toggle {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1000;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(107, 114, 128, 0.35);
+  background: #fff;
+  color: #111;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  cursor: pointer;
+  user-select: none;
+}
+.audio-toggle.on {
+  border-color: rgba(34, 197, 94, 0.6);   /* sinaliza ON (verde na borda) */
+}
+.audio-toggle.off {
+  opacity: .85;
+}
+
+/* Badge "Flapping" no popup (mantém padrão amarelo/atenção) */
+.badge-flapping {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 10px;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* ============================
+   Painel flutuante de busca
+   ============================ */
+.search-toggle {
+  position: fixed;
+  right: 12px;
+  bottom: 56px; /* acima do botão de Som */
+  z-index: 1100;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(107,114,128,.35);
+  background: #fff;
+  color: #111;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  cursor: pointer;
+  user-select: none;
+}
+.search-toggle:hover { box-shadow: 0 3px 7px rgba(0,0,0,.2); }
+
+.search-panel {
+  position: fixed;
+  right: 12px;
+  top: 68px;
+  width: 340px;
+  max-height: 70vh;
+  z-index: 1200;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  display: none; /* start hidden */
+}
+.search-panel.open { display: flex; flex-direction: column; }
+
+.search-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  font-weight: 700;
+}
+.search-panel__close {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.search-panel__body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-panel__input {
+  display: flex;
+  gap: 6px;
+}
+.search-panel__input input[type="text"] {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+}
+.search-panel__input button {
+  padding: 8px 10px;
+  border: 1px solid rgba(107,114,128,.35);
+  border-radius: 8px;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+
+.search-panel__options {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: #333;
+}
+.search-panel__options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.search-panel__results {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.search-panel__results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafafa;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 12px;
+}
+.search-panel__results-list {
+  max-height: 32vh;
+  overflow: auto;
+}
+.search-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #f2f2f2;
+  align-items: center;
+  font-size: 13px;
+}
+.search-item:last-child { border-bottom: none; }
+.search-item__name { font-weight: 600; }
+.search-item__host { font-size: 12px; color: #444; }
+.search-item__status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.08);
+}
+.search-item__status.up { background: rgba(34,197,94,.12); color: #14532d; }
+.search-item__status.down { background: rgba(239,68,68,.14); color: #7f1d1d; }
+.search-item__status.warning { background: rgba(245,158,11,.14); color: #7c2d12; }
+.search-item__status.unknown { background: rgba(107,114,128,.14); color: #111827; }
+
+.search-panel__footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #eee;
+}
+.search-panel__footer button {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(107,114,128,.35);
+  background: #fff;
+  cursor: pointer;
+}
+.search-panel__footer button.primary {
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
 }
